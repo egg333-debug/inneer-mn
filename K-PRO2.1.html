@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">内蒙古特色食材溯源平台</title>
+    <!-- 添加语言选择器 -->
+    <style>
+        /* 语言选择器样式 */
+        .language-selector {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 5px;
+        }
+        
+        .language-selector select {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        .language-selector select:hover {
+            border-color: #4a90e2;
+        }
+    </style>
+    <script>
+        function initLanguageSelector() {
+            const languageSelector = document.createElement('div');
+            languageSelector.className = 'language-selector';
+            languageSelector.innerHTML = `
+                <select id="languageSelect" onchange="changeLanguage(this.value)">
+                    <option value="zh">中文</option>
+                    <option value="mn">蒙文</option>
+                    <option value="en">English</option>
+                </select>
+            `;
+            document.body.appendChild(languageSelector);
+            
+            // 应用保存的语言设置
+            const savedLang = localStorage.getItem('preferredLanguage') || 'zh';
+            document.getElementById('languageSelect').value = savedLang;
+            changeLanguage(savedLang);
+            
+            // 确保所有元素都应用了翻译
+            document.addEventListener('DOMContentLoaded', function() {
+                // 延迟一点时间确保DOM完全加载
+                setTimeout(() => {
+                    applyTranslations(savedLang);
+                }, 100);
+            });
+        }
+        
+        // 页面加载完成后初始化语言选择器
+        document.addEventListener('DOMContentLoaded', initLanguageSelector);
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="mobile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="translations.js"></script>
+    <script src="auth.js"></script>
+    <script src="script.js" defer></script>
+    <style>
+        /* 登录模态框样式 */
+        .login-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-modal.active {
+            display: flex;
+        }
+
+        .login-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 400px;
+            padding: 30px;
+            position: relative;
+        }
+
+        .login-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .login-header h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .login-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .login-form label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .login-form input:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            color: #666;
+        }
+
+        .remember-me input[type="checkbox"] {
+            margin-right: 8px;
+            width: auto;
+        }
+
+        .forgot-password {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .login-divider {
+            text-align: center;
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .login-divider::before,
+        .login-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .login-divider::before {
+            left: 0;
+        }
+
+        .login-divider::after {
+            right: 0;
+        }
+
+        .social-login {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .social-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .social-button:hover {
+            background-color: #f5f5f5;
+        }
+
+        .register-link {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .register-link a {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+
+        .error-message {
+            display: none;
+            color: #ff4444;
+            background-color: #ffe6e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* 用户菜单样式 */
+        .user-menu {
+            position: relative;
+        }
+
+        .user-menu .user-name {
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .user-menu .user-name:hover {
+            color: #4a90e2;
+        }
+
+        .user-menu .user-name i {
+            margin-left: 5px;
+        }
+
+        .user-menu .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            min-width: 150px;
+            z-index: 100;
+        }
+
+        .user-menu:hover .dropdown-menu {
+            display: block;
+        }
+
+        .user-menu .dropdown-menu li {
+            display: block;
+            width: 100%;
+        }
+
+        .user-menu .dropdown-menu a {
+            display: block;
+            padding: 10px 15px;
+            color: #333;
+            text-decoration: none;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .user-menu .dropdown-menu a:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* 用户中心模态框样式 */
+        .user-center-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .user-center-modal.active {
+            display: flex;
+        }
+
+        .user-center-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+            position: relative;
+        }
+
+        .user-center-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        .user-center-header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .user-center-header h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .user-center-nav {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+
+        .user-center-nav-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            border-bottom: 2px solid transparent;
+        }
+
+        .user-center-nav-item.active {
+            color: #4a90e2;
+            border-bottom-color: #4a90e2;
+        }
+
+        .user-center-content {
+            margin-top: 20px;
+        }
+
+        .user-center-tab {
+            display: none;
+        }
+
+        .user-center-tab.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .user-info-item {
+            display: flex;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .user-info-label {
+            width: 120px;
+            color: #666;
+            padding-right: 15px;
+        }
+
+        .user-info-value {
+            flex: 1;
+            color: #333;
+        }
+
+        .user-center-button {
+            padding: 10px 15px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .success-message {
+            display: none;
+            color: #4CAF50;
+            background-color: #E8F5E9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* 关于我们部分样式优化 */
+        .about-section {
+            padding: 80px 0;
+            background-color: #f9f9f9;
+            position: relative;
+        }
+        
+        .about-section:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg width%3D"20" height%3D"20" xmlns%3D"http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg"%3E%3Cpath d%3D"M0 0h10v10H0zm10 10h10v10H10z" fill%3D"%23f0f0f0" fill-rule%3D"evenodd"%2F%3E%3C%2Fsvg%3E');
+            opacity: 0.3;
+            z-index: 0;
+        }
+        
+        .about-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .about-header {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+        }
+        
+        .about-header h2 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .about-header h2:after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background-color: #4a90e2;
+        }
+        
+        .about-content-wrapper {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        
+        .about-image-container {
+            flex: 0 0 45%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .about-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .about-text-container {
+            flex: 0 0 55%;
+            padding: 40px;
+        }
+        
+        .about-text-container h3 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        .about-text-container h3:after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background-color: #4a90e2;
+        }
+        
+        .mission-text {
+            margin-bottom: 30px;
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        .platform-features {
+            margin-top: 30px;
+        }
+        
+        .platform-features h4 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .feature-item i {
+            color: #4CAF50;
+            margin-right: 10px;
+            margin-top: 3px;
+        }
+        
+        .feature-text {
+            flex: 1;
+        }
+        
+        .service-highlights {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .service-card {
+            text-align: center;
+            background-color: #fff;
+            padding: 30px 20px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            flex: 0 0 calc(33.333% - 20px);
+            transition: transform 0.3s;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .service-icon {
+            height: 70px;
+            width: 70px;
+            line-height: 70px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            font-size: 28px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .service-card:nth-child(1) .service-icon {
+            background-color: #4CAF50;
+        }
+        
+        .service-card:nth-child(2) .service-icon {
+            background-color: #2196F3;
+        }
+        
+        .service-card:nth-child(3) .service-icon {
+            background-color: #FF9800;
+        }
+        
+        .service-card h4 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .service-card p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        @media screen and (max-width: 768px) {
+            .about-content-wrapper {
+                flex-direction: column;
+            }
+            
+            .about-image-container {
+                flex: 0 0 100%;
+                height: 250px;
+            }
+            
+            .about-text-container {
+                flex: 0 0 100%;
+                padding: 30px;
+            }
+            
+            .service-card {
+                flex: 0 0 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1>内蒙古特色食材溯源平台</h1>
+            </div>
+            <nav class="main-nav">
+                <div class="nav-container">
+                    <div class="logo">
+                        <a href="/">
+                            <img src="images/logo.png" alt="内蒙古食品溯源平台">
+                        </a>
+                    </div>
+                    <button class="mobile-menu-toggle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <ul class="main-menu">
+                        <li><a href="#home" data-i18n="home">首页</a></li>
+                        <li><a href="#trace" data-i18n="trace">溯源查询</a></li>
+                        <li><a href="#about" data-i18n="about">关于我们</a></li>
+                        <li><a href="#contact" data-i18n="contact">联系我们</a></li>
+                        <li class="user-menu" style="display: none;">
+                            <a href="#" class="user-name">
+                                <span>用户名</span>
+                                <i class="fas fa-caret-down"></i>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="#" id="show-user-center"><i class="fas fa-user-circle"></i> 个人中心</a></li>
+                                <li><a href="#" onclick="logout(); return false;"><i class="fas fa-sign-out-alt"></i> 退出登录</a></li>
+                            </ul>
+                        </li>
+                        <li class="login-btn"><a href="#" id="show-login-btn" data-i18n="login">登录</a></li>
+                        <li class="language-selector">
+                            <select id="languageSelect" onchange="changeLanguage(this.value)">
+                                <option value="zh">简体中文</option>
+                                <option value="mn">蒙古文</option>
+                                <option value="en">English</option>
+                            </select>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero" id="home">
+        <div class="hero-slider">
+            <div class="slide active">
+                <img src="images/444.jpg" alt="内蒙古美食展示1">
+                <div class="slide-overlay"></div>
+            </div>
+            <div class="slide">
+                <img src="images/555.jpg" alt="内蒙古美食展示2">
+                <div class="slide-overlay"></div>
+            </div>
+            <div class="slide">
+                <img src="images/666.jpg" alt="内蒙古美食展示3">
+                <div class="slide-overlay"></div>
+            </div>
+            <div class="slide">
+                <img src="images/777.jpg" alt="内蒙古美食展示4">
+                <div class="slide-overlay"></div>
+            </div>
+        </div>
+
+        <button class="slider-nav prev" aria-label="上一张"><i class="fas fa-chevron-left"></i></button>
+        <button class="slider-nav next" aria-label="下一张"><i class="fas fa-chevron-right"></i></button>
+
+        <div class="slider-dots">
+            <button class="dot active" aria-label="第1张图片"></button>
+            <button class="dot" aria-label="第2张图片"></button>
+            <button class="dot" aria-label="第3张图片"></button>
+            <button class="dot" aria-label="第4张图片"></button>
+        </div>
+
+        <div class="container">
+            <div class="hero-content">
+                <h2 data-i18n="heroTitle">探索内蒙古纯净食材的源头</h2>
+                <p data-i18n="heroSubtitle">从草原到餐桌，每一步都可追溯</p>
+                <div class="search-box">
+                    <input type="text" id="trace-code" data-i18n-placeholder="searchPlaceholder" placeholder="输入溯源码查询食材来源">
+                    <button id="search-btn" data-i18n="searchButton">查询</button>
+                </div>
+                <div class="quick-access">
+                    <h3 data-i18n="quickAccess">快速访问</h3>
+                    <div class="quick-links">
+                        <a href="#dairy" class="quick-link-card">
+                            <i class="fas fa-cheese"></i>
+                            <span data-i18n="dairy">乳制品</span>
+                            <p data-i18n="dairyDesc">传统工艺，纯净奶源</p>
+                        </a>
+                        <a href="#meat" class="quick-link-card">
+                            <i class="fas fa-drumstick-bite"></i>
+                            <span data-i18n="meat">肉制品</span>
+                            <p data-i18n="meatDesc">草原放养，天然品质</p>
+                        </a>
+                        <a href="#grains" class="quick-link-card">
+                            <i class="fas fa-bread-slice"></i>
+                            <span data-i18n="grains">杂粮</span>
+                            <p data-i18n="grainsDesc">高原种植，营养丰富</p>
+                        </a>
+                        <a href="#herbs" class="quick-link-card">
+                            <i class="fas fa-seedling"></i>
+                            <span data-i18n="herbs">草药</span>
+                            <p data-i18n="herbsDesc">天然生长，品质上乘</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="featured-products" id="products">
+        <div class="container">
+            <h2 class="section-title" data-i18n="featuredProducts">特色食材</h2>
+            <div class="product-grid">
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="images/ruzhiping.jpg" alt="内蒙古乳制品">
+                    </div>
+                    <div class="product-info">
+                        <h3 data-i18n="dairy">乳制品</h3>
+                        <p data-i18n="dairyIntro">来自草原的纯净奶源，传统工艺制作的奶酪、奶茶、奶皮等。</p>
+                        <a href="#dairy" class="btn" data-i18n="learnMore">了解更多</a>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="images/meat.jpg" alt="内蒙古肉制品">
+                    </div>
+                    <div class="product-info">
+                        <h3 data-i18n="meat">肉类</h3>
+                        <p data-i18n="meatIntro">草原放养的牛羊肉，无污染、无添加，保留原始风味。</p>
+                        <a href="#meat" class="btn" data-i18n="learnMore">了解更多</a>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="images/guwu.jpg" alt="内蒙古杂粮">
+                    </div>
+                    <div class="product-info">
+                        <h3 data-i18n="grains">杂粮</h3>
+                        <p data-i18n="grainsIntro">高原种植的有机杂粮，营养丰富，品质上乘。</p>
+                        <a href="#grains" class="btn" data-i18n="learnMore">了解更多</a>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image">
+                        <img src="images/caoyao.jpg" alt="内蒙古草药">
+                    </div>
+                    <div class="product-info">
+                        <h3 data-i18n="herbs">草药</h3>
+                        <p data-i18n="herbsIntro">内蒙古特有的草原草药，天然生长，药用价值高。</p>
+                        <a href="#herbs" class="btn" data-i18n="learnMore">了解更多</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 各类特色食材详情区域 -->
+    <section class="food-category" id="dairy">
+        <div class="container">
+            <h2 class="section-title" data-i18n="dairyProducts">内蒙古特色乳制品</h2>
+            <div class="category-content">
+                <div class="category-image">
+                    <img src="https://images.unsplash.com/photo-1628088062854-d1870b4553da?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80" alt="内蒙古乳制品展示">
+                </div>
+                <div class="category-info">
+                    <h3 data-i18n="dairyCharm">草原乳制品的独特魅力</h3>
+                    <p data-i18n="dairyDescription">内蒙古草原乳制品以其纯净、营养丰富而闻名。得益于广袤的草原和传统的游牧文化，内蒙古的奶制品保留了最原始的风味和营养价值。</p>
+                    <div class="food-features">
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="naturalNoAdditives">纯天然无添加</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="traditionalCrafts">传统工艺制作</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="highNutrition">营养价值高</span>
+                        </div>
+                    </div>
+                    <p><span data-i18n="recommendedProducts">推荐产品：</span><span data-i18n="dairyItems">奶茶、奶酪、奶皮、酸奶、黄油</span></p>
+                    <p><span data-i18n="traceCodeExample">溯源码示例：</span><span class="trace-code-example">NMG12345</span></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="food-category" id="meat">
+        <div class="container">
+            <h2 class="section-title" data-i18n="meatProducts">内蒙古特色肉制品</h2>
+            <div class="category-content reverse">
+                <div class="category-image">
+                    <img src="https://images.unsplash.com/photo-1544025162-d76694265947?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80" alt="内蒙古肉制品">
+                </div>
+                <div class="category-info">
+                    <h3 data-i18n="grasslandMeat">草原放养肉制品</h3>
+                    <p data-i18n="meatDescription">内蒙古的肉制品以其鲜嫩、无污染而著称。草原放养的牛羊，自由生长在广阔的草原上，以天然牧草为食，肉质鲜美，营养丰富。</p>
+                    <div class="food-features">
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="grasslandRaised">草原放养</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="noHormones">无激素添加</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="traditionalCuring">传统工艺腌制</span>
+                        </div>
+                    </div>
+                    <p><span data-i18n="recommendedProducts">推荐产品：</span><span data-i18n="meatItems">牛肉干、羊肉干、手扒肉、风干牛肉</span></p>
+                    <p><span data-i18n="traceCodeExample">溯源码示例：</span><span class="trace-code-example">NMG23456</span></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="food-category" id="grains">
+        <div class="container">
+            <h2 class="section-title" data-i18n="grainsProducts">内蒙古特色杂粮</h2>
+            <div class="category-content">
+                <div class="category-image">
+                    <img src="https://images.unsplash.com/photo-1576826171428-f0d0208354a9?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80" alt="内蒙古杂粮">
+                </div>
+                <div class="category-info">
+                    <h3 data-i18n="organicGrains">有机杂粮</h3>
+                    <p data-i18n="grainsDescription">内蒙古的杂粮种植在高原地区，土壤肥沃，阳光充足，昼夜温差大，生长周期长，营养价值高，口感独特。</p>
+                    <div class="food-features">
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="organicPlanting">有机种植</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="richNutrition">营养丰富</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="naturalGrowth">自然生长</span>
+                        </div>
+                    </div>
+                    <p><span data-i18n="recommendedProducts">推荐产品：</span><span data-i18n="grainItems">小米、燕麦、荞麦、莜麦</span></p>
+                    <p><span data-i18n="traceCodeExample">溯源码示例：</span><span class="trace-code-example">NMG34567</span></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="food-category" id="herbs">
+        <div class="container">
+            <h2 class="section-title" data-i18n="herbsProducts">内蒙古特色草药</h2>
+            <div class="category-content reverse">
+                <div class="category-image">
+                    <img src="https://images.unsplash.com/photo-1471193945509-9ad0617afabf?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80" alt="内蒙古草药">
+                </div>
+                <div class="category-info">
+                    <h3 data-i18n="naturalHerbs">草原天然草药</h3>
+                    <p data-i18n="herbsDescription">内蒙古草原上生长着丰富的天然草药资源，这些草药在无污染的环境中自然生长，药用价值极高，是中医药宝库中的珍贵财富。</p>
+                    <div class="food-features">
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="naturalGrowth">天然生长</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="highMedicinalValue">药用价值高</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span data-i18n="unpollutedEnvironment">无污染环境</span>
+                        </div>
+                    </div>
+                    <p><span data-i18n="recommendedProducts">推荐产品：</span><span data-i18n="herbItems">沙棘、防风、黄芪、甘草、苁蓉</span></p>
+                    <p><span data-i18n="traceCodeExample">溯源码示例：</span><span class="trace-code-example">NMG45678</span></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="trace-system" id="trace">
+        <div class="container">
+            <h2 class="section-title" data-i18n="traceSystem">溯源系统</h2>
+            <div class="trace-content">
+                <div class="trace-info">
+                    <h3 data-i18n="howToUse">如何使用溯源系统</h3>
+                    <p data-i18n="traceIntro">每件产品都有唯一的溯源码，通过扫描二维码或输入溯源码，即可查询产品从源头到销售的全过程信息。</p>
+                    <ol class="trace-steps">
+                        <li data-i18n="traceStep1">找到产品包装上的溯源码</li>
+                        <li data-i18n="traceStep2">在上方搜索框中输入溯源码</li>
+                        <li data-i18n="traceStep3">点击查询按钮获取详细信息</li>
+                    </ol>
+                    <div class="trace-examples">
+                        <p data-i18n="tryTraceCodes">试试这些溯源码：</p>
+                        <div class="trace-code-buttons">
+                            <button class="trace-code-btn" data-code="NMG12345">NMG12345</button>
+                            <button class="trace-code-btn" data-code="NMG23456">NMG23456</button>
+                            <button class="trace-code-btn" data-code="NMG34567">NMG34567</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="trace-demo">
+                    <div class="trace-result" id="trace-result">
+                        <h3 data-i18n="traceResultArea">溯源结果展示区</h3>
+                        <p data-i18n="enterTraceCodeHint">请在上方搜索框输入溯源码进行查询</p>
+                        <div class="trace-details" id="trace-details">
+                            <!-- 溯源结果将在这里显示 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section" id="about">
+        <div class="about-container">
+            <div class="about-header">
+                <h2>关于我们</h2>
+            </div>
+            
+            <div class="about-content-wrapper">
+                <div class="about-image-container">
+                    <img src="https://images.unsplash.com/photo-1551326844-4df70f78d0e9?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80" alt="内蒙古特色食材">
+                </div>
+                
+                <div class="about-text-container">
+                    <h3>我们的使命</h3>
+                    <p class="mission-text">内蒙古特色食材溯源平台致力于推广"内蒙古地区的优质特色食材，通过现代化的溯源技术，让消费者了解食材的来源、生产过程和品质保证。我们与内蒙古各地的优质食材生产商合作，确保每一件产品都可追溯到源头。</p>
+                    
+                    <div class="platform-features">
+                        <h4>通过我们的平台，您可以：</h4>
+                        <ul class="feature-list">
+                            <li class="feature-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span class="feature-text">了解内蒙古特色食材的文化背景和特点</span>
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span class="feature-text">查询食材的产地、生产日期、检测报告等信息</span>
+                            </li>
+                            <li class="feature-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span class="feature-text">直接联系生产商，获取更多产品信息</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="service-highlights">
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4>品质保证</h4>
+                    <p>严格的质量控制体系确保产品品质安全可靠</p>
+                </div>
+                
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h4>全程溯源</h4>
+                    <p>从源头到餐桌，每一步都可以追溯查询</p>
+                </div>
+                
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <h4>权威认证</h4>
+                    <p>多重认证体系保障食材品质与安全</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact" id="contact">
+        <div class="container">
+            <h2 class="section-title" data-i18n="contact">联系我们</h2>
+            <div class="contact-content">
+                <div class="contact-form">
+                    <h3 data-i18n="leaveMessage">留言咨询</h3>
+                    <form id="contact-form">
+                        <div class="form-group">
+                            <label for="name" data-i18n="name">姓名</label>
+                            <input type="text" id="name" name="name" required data-i18n-placeholder="enterName">
+                        </div>
+                        <div class="form-group">
+                            <label for="email" data-i18n="email">邮箱</label>
+                            <input type="email" id="email" name="email" required data-i18n-placeholder="enterEmail">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone" data-i18n="phone">电话</label>
+                            <input type="tel" id="phone" name="phone" data-i18n-placeholder="enterPhone">
+                        </div>
+                        <div class="form-group">
+                            <label for="message" data-i18n="message">留言内容</label>
+                            <textarea id="message" name="message" rows="5" required data-i18n-placeholder="enterMessage"></textarea>
+                        </div>
+                        <button type="submit" class="btn" data-i18n="submit">提交</button>
+                    </form>
+                </div>
+                <div class="contact-info">
+                    <h3 data-i18n="contactInfo">联系方式</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> <span data-i18n="address">地址：内蒙古包头市</span></li>
+                        <li><i class="fas fa-phone"></i> <span data-i18n="tel">电话：0471-12345678</span></li>
+                        <li><i class="fas fa-envelope"></i> <span data-i18n="emailAddress">邮箱：2118832955@qq.com</span></li>
+                    </ul>
+                    <div class="social-media">
+                        <a href="#" class="social-icon"><i class="fab fa-weixin"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-weibo"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-qq"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h2 data-i18n="title">内蒙古特色食材溯源平台</h2>
+                    <p data-i18n="heroSubtitle">从草原到餐桌，每一步都可追溯</p>
+                </div>
+                <div class="footer-links">
+                    <h3 data-i18n="quickLinks">快速链接</h3>
+                    <ul class="horizontal-links">
+                        <li><a href="#home" data-i18n="home">首页</a></li>
+                        <li><a href="#products" data-i18n="featuredProducts">特色食材</a></li>
+                        <li><a href="#trace" data-i18n="trace">溯源查询</a></li>
+                        <li><a href="#about" data-i18n="about">关于我们</a></li>
+                        <li><a href="#contact" data-i18n="contactLabel">联系方式</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h3 data-i18n="contactInfo">联系方式</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> <span data-i18n="address">内蒙古包头市</span></p>
+                    <p><i class="fas fa-phone"></i> <span data-i18n="tel">0471-12345678</span></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p data-i18n="copyright">&copy; 2025 内蒙古特色食材溯源平台 版权所有</p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="login-modal" id="login-modal">
+        <div class="login-container">
+            <button class="login-close" id="login-close">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="login-header">
+                <h2 data-i18n="welcomeLogin">欢迎登录</h2>
+                <p data-i18n="title">内蒙古特色食材溯源平台</p>
+            </div>
+            
+            <div id="error-message" class="error-message"></div>
+            
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="username" data-i18n="username">用户名</label>
+                    <input type="text" id="username" name="username" required data-i18n-placeholder="enterUsername" placeholder="请输入用户名">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" data-i18n="password">密码</label>
+                    <input type="password" id="password" name="password" required data-i18n-placeholder="enterPassword" placeholder="请输入密码">
+                </div>
+                
+                <div class="remember-forgot">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember" id="remember">
+                        <span data-i18n="rememberMe">记住我</span>
+                    </label>
+                    <a href="#" class="forgot-password" data-i18n="forgotPassword">忘记密码？</a>
+                </div>
+                
+                <button type="submit" class="login-button" data-i18n="login">登录</button>
+                
+                <div class="login-divider" data-i18n="or">或</div>
+                
+                <div class="social-login">
+                    <div class="social-button">
+                        <i class="fab fa-weixin"></i>
+                    </div>
+                    <div class="social-button">
+                        <i class="fab fa-qq"></i>
+                    </div>
+                    <div class="social-button">
+                        <i class="fab fa-weibo"></i>
+                    </div>
+                </div>
+                
+                <div class="register-link">
+                    <span data-i18n="noAccount">还没有账号？</span><a href="register.html" data-i18n="register">立即注册</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 用户中心模态框 -->
+    <div class="user-center-modal" id="user-center-modal">
+        <div class="user-center-container">
+            <button class="user-center-close" id="user-center-close">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="user-center-header">
+                <h2 data-i18n="userCenter">用户中心</h2>
+                <p data-i18n="manageAccount">管理您的账户信息</p>
+            </div>
+            
+            <div class="user-center-nav">
+                <div class="user-center-nav-item active" data-tab="profile" data-i18n="profile">个人资料</div>
+                <div class="user-center-nav-item" data-tab="password" data-i18n="changePassword">修改密码</div>
+                <div class="user-center-nav-item" data-tab="orders" data-i18n="myOrders">我的订单</div>
+                <div class="user-center-nav-item" data-tab="favorites" data-i18n="favorites">收藏夹</div>
+            </div>
+            
+            <div class="user-center-content">
+                <!-- 个人资料 -->
+                <div class="user-center-tab active" id="profile-tab">
+                    <div class="success-message" id="profile-success" data-i18n="profileUpdateSuccess">资料更新成功！</div>
+                    
+                    <div class="user-info">
+                        <div class="user-info-item">
+                            <div class="user-info-label" data-i18n="username">用户名</div>
+                            <div class="user-info-value" id="profile-username"></div>
+                        </div>
+                        <div class="user-info-item">
+                            <div class="user-info-label" data-i18n="registerTime">注册时间</div>
+                            <div class="user-info-value">2024-05-01</div>
+                        </div>
+                        <div class="user-info-item">
+                            <div class="user-info-label" data-i18n="lastLogin">上次登录</div>
+                            <div class="user-info-value">2024-06-10</div>
+                        </div>
+                    </div>
+                    
+                    <form id="profile-form">
+                        <div class="form-group">
+                            <label for="nickname" data-i18n="nickname">昵称</label>
+                            <input type="text" id="nickname" name="nickname" data-i18n-placeholder="enterNickname" placeholder="设置您的昵称">
+                        </div>
+                        <div class="form-group">
+                            <label for="email" data-i18n="email">邮箱</label>
+                            <input type="email" id="email" name="email" data-i18n-placeholder="enterEmail" placeholder="example@mail.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone" data-i18n="phone">手机号</label>
+                            <input type="tel" id="phone" name="phone" data-i18n-placeholder="enterPhone" placeholder="请输入手机号">
+                        </div>
+                        
+                        <button type="submit" class="user-center-button" data-i18n="saveChanges">保存修改</button>
+                    </form>
+                </div>
+                
+                <!-- 修改密码 -->
+                <div class="user-center-tab" id="password-tab">
+                    <div class="success-message" id="password-success" data-i18n="passwordUpdateSuccess">密码修改成功！</div>
+                    
+                    <form id="password-form">
+                        <div class="form-group">
+                            <label for="current-password" data-i18n="currentPassword">当前密码</label>
+                            <input type="password" id="current-password" name="current-password" required data-i18n-placeholder="enterCurrentPassword" placeholder="请输入当前密码">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-password" data-i18n="newPassword">新密码</label>
+                            <input type="password" id="new-password" name="new-password" required data-i18n-placeholder="enterNewPassword" placeholder="请输入新密码">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password" data-i18n="confirmPassword">确认新密码</label>
+                            <input type="password" id="confirm-password" name="confirm-password" required data-i18n-placeholder="confirmNewPassword" placeholder="请再次输入新密码">
+                        </div>
+                        
+                        <button type="submit" class="user-center-button" data-i18n="changePassword">修改密码</button>
+                    </form>
+                </div>
+                
+                <!-- 我的订单 -->
+                <div class="user-center-tab" id="orders-tab">
+                    <p data-i18n="noOrders">您暂无订单记录。</p>
+                </div>
+                
+                <!-- 收藏夹 -->
+                <div class="user-center-tab" id="favorites-tab">
+                    <p data-i18n="noFavorites">您暂无收藏记录。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 登录模态框处理
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginModal = document.getElementById('login-modal');
+            const showLoginBtn = document.getElementById('show-login-btn');
+            const closeLoginBtn = document.getElementById('login-close');
+            
+            // 显示登录模态框
+            if (showLoginBtn) {
+                showLoginBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    loginModal.classList.add('active');
+                });
+            }
+            
+            // 关闭登录模态框
+            if (closeLoginBtn) {
+                closeLoginBtn.addEventListener('click', function() {
+                    loginModal.classList.remove('active');
+                });
+            }
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', function(e) {
+                if (e.target === loginModal) {
+                    loginModal.classList.remove('active');
+                }
+            });
+            
+            // 显示错误信息
+            function showError(message) {
+                const errorDiv = document.getElementById('error-message');
+                if (errorDiv) {
+                    errorDiv.textContent = message;
+                    errorDiv.style.display = 'block';
+                    setTimeout(() => {
+                        errorDiv.style.display = 'none';
+                    }, 3000);
+                }
+            }
+            
+            // 登录表单提交
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    const remember = document.getElementById('remember').checked;
+                    
+                    if (!username.trim()) {
+                        showError('请输入用户名');
+                        return;
+                    }
+                    if (!password.trim()) {
+                        showError('请输入密码');
+                        return;
+                    }
+                    
+                    const loginResult = validateLogin(username, password);
+                    
+                    if (loginResult) {
+                        saveLoginState({ username: username }, remember);
+                        loginModal.classList.remove('active');
+                        updateLoginUI();
+                    } else {
+                        showError('用户名或密码错误');
+                    }
+                });
+            }
+            
+            // 社交媒体登录
+            const socialButtons = document.querySelectorAll('.social-button');
+            socialButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    showError('社交媒体登录功能正在开发中');
+                });
+            });
+        });
+
+        // 用户中心模态框处理
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const userCenterModal = document.getElementById('user-center-modal');
+            const showUserCenterBtn = document.getElementById('show-user-center');
+            const closeUserCenterBtn = document.getElementById('user-center-close');
+            const navItems = document.querySelectorAll('.user-center-nav-item');
+            const tabs = document.querySelectorAll('.user-center-tab');
+            
+            // 显示用户中心模态框
+            if (showUserCenterBtn) {
+                showUserCenterBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // 加载用户信息
+                    loadUserInfo();
+                    userCenterModal.classList.add('active');
+                });
+            }
+            
+            // 关闭用户中心模态框
+            if (closeUserCenterBtn) {
+                closeUserCenterBtn.addEventListener('click', function() {
+                    userCenterModal.classList.remove('active');
+                });
+            }
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', function(e) {
+                if (e.target === userCenterModal) {
+                    userCenterModal.classList.remove('active');
+                }
+            });
+            
+            // 标签切换
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 更新导航项目状态
+                    navItems.forEach(navItem => {
+                        navItem.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // 更新标签显示
+                    tabs.forEach(tab => {
+                        tab.classList.remove('active');
+                    });
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+            
+            // 加载用户信息
+            function loadUserInfo() {
+                const userData = checkLoginState();
+                if (userData) {
+                    document.getElementById('profile-username').textContent = userData.username;
+                }
+            }
+            
+            // 处理个人资料表单提交
+            const profileForm = document.getElementById('profile-form');
+            if (profileForm) {
+                profileForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // 获取表单数据
+                    const nickname = document.getElementById('nickname').value;
+                    const email = document.getElementById('email').value;
+                    const phone = document.getElementById('phone').value;
+                    
+                    // 这里应该发送到后端保存数据
+                    // 目前只是模拟成功
+                    
+                    // 显示成功消息
+                    const successMsg = document.getElementById('profile-success');
+                    successMsg.style.display = 'block';
+                    setTimeout(() => {
+                        successMsg.style.display = 'none';
+                    }, 3000);
+                });
+            }
+            
+            // 处理修改密码表单提交
+            const passwordForm = document.getElementById('password-form');
+            if (passwordForm) {
+                passwordForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const currentPassword = document.getElementById('current-password').value;
+                    const newPassword = document.getElementById('new-password').value;
+                    const confirmPassword = document.getElementById('confirm-password').value;
+                    
+                    // 表单验证
+                    if (!currentPassword || !newPassword || !confirmPassword) {
+                        showErrorMessage('请填写所有密码字段');
+                        return;
+                    }
+                    
+                    if (newPassword !== confirmPassword) {
+                        showErrorMessage('两次输入的新密码不一致');
+                        return;
+                    }
+                    
+                    // 这里应该验证当前密码并更新密码
+                    // 目前只是模拟成功
+                    
+                    // 清空表单
+                    passwordForm.reset();
+                    
+                    // 显示成功消息
+                    const successMsg = document.getElementById('password-success');
+                    successMsg.style.display = 'block';
+                    setTimeout(() => {
+                        successMsg.style.display = 'none';
+                    }, 3000);
+                });
+            }
+            
+            // 显示错误消息
+            function showErrorMessage(message) {
+                alert(message);
+            }
+        });
+    </script>
+</body>
+</html>
